@@ -1,0 +1,37 @@
+{
+  "type": "module",
+  "name": "complianceai",
+  "version": "1.0.0",
+  "description": "AI-powered business license compliance management for Indian SMBs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.49.8",
+    "canvas-confetti": "^1.9.3",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.10.0",
+    "i18next": "^25.1.2",
+    "jspdf": "^2.5.2",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.511.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.5.2",
+    "react-i18next": "^15.5.1",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^7.5.3",
+    "recharts": "^2.15.3",
+    "tesseract.js": "^5.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.3.5"
+  }
+}
