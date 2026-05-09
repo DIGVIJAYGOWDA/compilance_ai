@@ -119,24 +119,27 @@ export default function BusinessSelector() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0D1B2A] via-[#1a2d44] to-[#0D1B2A] flex flex-col">
-      {/* Header */}
-      <nav className="flex items-center justify-between px-6 py-5">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-['Plus_Jakarta_Sans',system-ui,sans-serif] antialiased" style={{textRendering:'optimizeLegibility'}}>
+
+      {/* ── Navbar ── */}
+      <nav className="flex items-center justify-between px-8 py-5 bg-[#0D1B2A] shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-[#ff4f37] rounded-xl flex items-center justify-center shadow-sm">
             <Shield size={18} className="text-white" />
           </div>
-          <span className="text-white font-bold text-lg">ComplianceAI</span>
+          <span className="text-white font-[800] text-xl tracking-tight">ComplianceAI</span>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05, y: -1 }}
+          whileTap={{ scale: 0.95 }}
           onClick={handleSignOut}
-          className="flex items-center gap-2 text-white/50 hover:text-red-400 text-sm transition-colors px-3 py-2 rounded-lg hover:bg-red-500/10"
+          className="flex items-center gap-2 bg-red-500 text-white border border-red-400 hover:bg-red-600 hover:shadow-lg text-[13px] font-bold transition-all px-4 py-2.5 rounded-xl"
         >
-          <LogOut size={15} /> Sign Out
-        </button>
+          <LogOut size={16} /> Sign Out
+        </motion.button>
       </nav>
 
-      {/* Main Content */}
+      {/* ── Main Content ── */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -145,18 +148,15 @@ export default function BusinessSelector() {
         >
           {/* Title */}
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-4 border border-blue-500/30">
-              <CheckCircle2 size={12} /> Welcome back, {user?.email?.split('@')[0]}
-            </div>
-            <h1 className="text-3xl font-black text-white mb-2">Select a Business</h1>
-            <p className="text-white/50 text-sm">Choose which business dashboard you want to manage</p>
+            <h1 className="text-[32px] font-[800] text-[#0c0c1d] mb-2 tracking-[-0.02em]">Select a Business</h1>
+            <p className="text-gray-500 text-[15px] font-['DM_Sans']">Choose which business dashboard you want to manage</p>
           </div>
 
           {/* Business Cards */}
           {loading ? (
             <div className="space-y-3">
               {[1, 2].map(i => (
-                <div key={i} className="h-24 bg-white/5 rounded-2xl animate-pulse" />
+                <div key={i} className="h-24 bg-white border border-gray-100 rounded-2xl animate-pulse" />
               ))}
             </div>
           ) : (
@@ -171,47 +171,51 @@ export default function BusinessSelector() {
                       key={biz.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.08 }}
+                      whileHover={{ scale: 1.01, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ delay: i * 0.08, type: 'spring', stiffness: 400, damping: 25 }}
                       onClick={() => handleSelect(biz)}
-                      className="w-full group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-500/50 rounded-2xl p-5 flex items-center gap-5 transition-all duration-200 text-left"
+                      className="w-full group bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] hover:from-white hover:to-white border border-slate-200 hover:border-[#ff4f37] hover:shadow-[0_8px_30px_rgba(255,79,55,0.1)] rounded-2xl p-5 flex items-center gap-5 transition-all duration-200 text-left"
                     >
                       {/* Icon */}
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}>
                         <Icon size={24} className="text-white" />
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-white text-base truncate">{biz.business_name}</div>
-                        <div className="text-white/40 text-sm capitalize">{biz.business_type?.replace('_', ' ')} · {biz.city}</div>
-                        <div className="mt-1.5 inline-flex items-center gap-1.5 bg-white/10 text-white/60 text-xs px-2.5 py-1 rounded-full">
+                        <div className="font-bold text-[#0c0c1d] text-base truncate">{biz.business_name}</div>
+                        <div className="text-gray-500 text-sm capitalize font-['DM_Sans']">{biz.business_type?.replace('_', ' ')} · {biz.city}</div>
+                        <div className="mt-1.5 inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-500 font-medium text-xs px-2.5 py-1 rounded-full">
                           <Building2 size={10} />
                           {count} license{count !== 1 ? 's' : ''} tracked
                         </div>
                       </div>
 
                       {/* Arrow */}
-                      <ChevronRight size={20} className="text-white/30 group-hover:text-blue-400 flex-shrink-0 transition-colors" />
+                      <ChevronRight size={20} className="text-gray-300 group-hover:text-[#ff4f37] flex-shrink-0 transition-colors" />
                     </motion.button>
                   );
                 })}
 
-                {/* Add New Business Card */}
+                {/* Add New Business */}
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: businesses.length * 0.08 }}
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ delay: businesses.length * 0.08, type: 'spring', stiffness: 400, damping: 25 }}
                   onClick={handleAddNew}
-                  className="w-full group border-2 border-dashed border-white/20 hover:border-blue-500/60 rounded-2xl p-5 flex items-center gap-5 transition-all duration-200 hover:bg-blue-500/5"
+                  className="w-full group border-2 border-dashed border-gray-200 hover:border-[#ff4f37] hover:bg-[#fffcfc] hover:shadow-[0_8px_30px_rgba(255,79,55,0.08)] rounded-2xl p-5 flex items-center gap-5 transition-all duration-200"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 group-hover:bg-blue-500/20 border-2 border-dashed border-white/20 group-hover:border-blue-500/50 flex items-center justify-center flex-shrink-0 transition-all">
-                    <Plus size={24} className="text-white/30 group-hover:text-blue-400 transition-colors" />
+                  <div className="w-14 h-14 rounded-2xl bg-gray-100 group-hover:bg-[#fff5f3] border-2 border-dashed border-gray-200 group-hover:border-[#ffd5cc] flex items-center justify-center flex-shrink-0 transition-all">
+                    <Plus size={24} className="text-gray-400 group-hover:text-[#ff4f37] transition-colors" />
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="font-bold text-white/50 group-hover:text-white transition-colors">Add New Business</div>
-                    <div className="text-white/30 text-sm">Register another business to track</div>
+                    <div className="font-bold text-gray-600 group-hover:text-[#0c0c1d] transition-colors">Add New Business</div>
+                    <div className="text-gray-500 text-sm font-['DM_Sans']">Register another business to track</div>
                   </div>
-                  <ArrowRight size={20} className="text-white/20 group-hover:text-blue-400 flex-shrink-0 transition-colors" />
+                  <ArrowRight size={20} className="text-gray-300 group-hover:text-[#ff4f37] flex-shrink-0 transition-colors" />
                 </motion.button>
               </div>
             </AnimatePresence>
@@ -220,8 +224,8 @@ export default function BusinessSelector() {
           {/* Empty State */}
           {!loading && businesses.length === 0 && (
             <div className="text-center py-10">
-              <div className="text-white/30 text-sm mb-4">No businesses registered yet.</div>
-              <button onClick={handleAddNew} className="btn-primary">
+              <div className="text-gray-500 text-sm mb-4 font-['DM_Sans']">No businesses registered yet.</div>
+              <button onClick={handleAddNew} className="bg-[#ff4f37] text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 mx-auto hover:bg-[#e03a25] transition-colors">
                 <Plus size={16} /> Register Your First Business
               </button>
             </div>
