@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, ArrowRight, ArrowLeft, Check, Loader2,
   UtensilsCrossed, Scissors, ShoppingBag, Stethoscope,
   HardHat, GraduationCap, Factory, Briefcase } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { supabase, signInWithOtp, verifyOtp, createBusiness } from '../services/supabase';
+import { supabase, signInWithOtp, verifyOtp, createBusiness, getBusiness } from '../services/supabase';
 import { BUSINESS_TYPES } from '../utils/licenseTypes';
 
 const ICON_MAP = { UtensilsCrossed, Scissors, ShoppingBag, Stethoscope, HardHat, GraduationCap, Factory, Briefcase };
@@ -24,24 +24,62 @@ const PROFILE_FIELDS = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
+  const [searchParams] = useSearchParams();
+  const isAddMode = searchParams.get('mode') === 'add-business';
+  // In add-business mode, skip email verification — user is already logged in
+  const [step, setStep] = useState(isAddMode ? 1 : 0);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '', '', '']);
   const [otpSent, setOtpSent] = useState(false);
+  const [usePin, setUsePin] = useState(false);
+  const [pin, setPin] = useState('');
   const [businessType, setBusinessType] = useState('');
   const [profile, setProfile] = useState({ city: 'Bengaluru', state: 'Karnataka' });
 
-  // Step 1 — OTP
-  const sendOtp = async () => {
+  // Step 1 — Auth Flow
+  const handleEmailSubmit = async () => {
     if (!email) { toast.error('Enter your email'); return; }
+    
+    // Automatically check if this device remembers the user has a PIN
+    if (localStorage.getItem(`has_pin_${email.toLowerCase()}`)) {
+      setUsePin(true);
+      return;
+    }
+    await sendOtp();
+  };
+
+  const sendOtp = async () => {
     setLoading(true);
     try {
       await signInWithOtp(email);
       setOtpSent(true);
+      setUsePin(false);
       toast.success('OTP sent to ' + email);
     } catch (err) { toast.error(err.message); }
     finally { setLoading(false); }
+  };
+
+  const verifyPinLogin = async () => {
+    if (pin.length !== 4) { toast.error('Enter your 4-digit PIN'); return; }
+    setLoading(true);
+    try {
+      // Must match the padding used when PIN was set in Settings
+      const paddedPin = `${pin}AI`;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: paddedPin });
+      if (error) throw error;
+      
+      // Check if user already has a business profile
+      const existingBiz = await getBusiness(data.user.id);
+      if (existingBiz) {
+        toast.success('Welcome back!');
+        window.location.href = '/businesses';
+      } else {
+        setStep(1); // New user - go through setup
+      }
+    } catch (err) { 
+      toast.error('Incorrect PIN. Try signing in with OTP.'); 
+    } finally { setLoading(false); }
   };
 
   const handleOtpChange = (idx, val) => {
@@ -57,7 +95,17 @@ export default function Onboarding() {
     setLoading(true);
     try {
       await verifyOtp(email, code);
-      setStep(1);
+      
+      // Check if user already exists in database
+      const { data: { user } } = await supabase.auth.getUser();
+      const existingBiz = await getBusiness(user.id);
+      
+      if (existingBiz) {
+        toast.success('Welcome back!');
+        window.location.href = '/dashboard';
+      } else {
+        setStep(1);
+      }
     } catch (err) { toast.error(err.message); }
     finally { setLoading(false); }
   };
@@ -71,8 +119,8 @@ export default function Onboarding() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       await createBusiness({ ...profile, business_type: businessType, owner_id: user.id, email: user.email, compliance_score: 100 });
-      navigate('/dashboard', { replace: true });
-      toast.success('🎉 Welcome to ComplianceAI!');
+      toast.success(isAddMode ? '🎉 New business added!' : '🎉 Welcome to ComplianceAI!');
+      window.location.href = '/businesses';
     } catch (err) { toast.error(err.message); }
     finally { setLoading(false); }
   };
@@ -111,30 +159,60 @@ export default function Onboarding() {
                 </div>
                 <div className="space-y-3">
                   <input type="email" placeholder="you@business.com" value={email}
-                    onChange={e => setEmail(e.target.value)} className="input" disabled={otpSent} />
-                  {!otpSent
-                    ? <button onClick={sendOtp} disabled={loading} className="btn-primary w-full">
+                    onChange={e => setEmail(e.target.value)} className="input" disabled={otpSent || usePin} />
+                  
+                  {!otpSent && !usePin && (
+                    <>
+                      <button onClick={handleEmailSubmit} disabled={loading} className="btn-primary w-full">
                         {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                        {loading ? 'Sending…' : 'Send OTP'} <ArrowRight size={16} />
+                        {loading ? 'Processing…' : 'Continue'} <ArrowRight size={16} />
                       </button>
-                    : <>
-                        <div>
-                          <p className="text-sm text-gray-600 mb-3 text-center">Enter the code sent to <strong>{email}</strong></p>
-                          <div className="flex gap-2 justify-center">
-                            {otp.map((v, i) => (
-                              <input key={i} id={`otp-${i}`} type="text" inputMode="numeric" maxLength={1}
-                                value={v} onChange={e => handleOtpChange(i, e.target.value)}
-                                className="w-11 h-12 text-center text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all" />
-                            ))}
-                          </div>
+                      <button onClick={() => setUsePin(true)} className="text-sm text-gray-500 w-full text-center hover:text-blue-600">
+                        Already have a PIN? Sign in here
+                      </button>
+                    </>
+                  )}
+
+                  {usePin && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-3 text-center">Enter your 4-digit PIN</p>
+                        <input type="password" maxLength={4} value={pin}
+                          onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+                          className="input text-center text-2xl tracking-[1em] font-bold" autoFocus />
+                      </div>
+                      <button onClick={verifyPinLogin} disabled={loading} className="btn-primary w-full">
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                        Sign In
+                      </button>
+                      <button onClick={sendOtp} disabled={loading} className="text-sm text-blue-600 w-full text-center hover:underline">
+                        Forgot PIN? Sign in with OTP
+                      </button>
+                      <button onClick={() => setUsePin(false)} className="text-xs text-gray-400 w-full text-center hover:text-gray-600">
+                        ← Change email
+                      </button>
+                    </div>
+                  )}
+
+                  {otpSent && !usePin && (
+                    <>
+                      <div>
+                        <p className="text-sm text-gray-600 mb-3 text-center">Enter the code sent to <strong>{email}</strong></p>
+                        <div className="flex gap-2 justify-center">
+                          {otp.map((v, i) => (
+                            <input key={i} id={`otp-${i}`} type="text" inputMode="numeric" maxLength={1}
+                              value={v} onChange={e => handleOtpChange(i, e.target.value)}
+                              className="w-11 h-12 text-center text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all" />
+                          ))}
                         </div>
-                        <button onClick={verifyOtpCode} disabled={loading} className="btn-primary w-full">
-                          {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                          Verify & Continue
-                        </button>
-                        <button onClick={() => setOtpSent(false)} className="text-sm text-blue-600 w-full text-center hover:underline">← Change email</button>
-                      </>
-                  }
+                      </div>
+                      <button onClick={verifyOtpCode} disabled={loading} className="btn-primary w-full">
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                        Verify & Continue
+                      </button>
+                      <button onClick={() => setOtpSent(false)} className="text-sm text-blue-600 w-full text-center hover:underline">← Change email</button>
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}

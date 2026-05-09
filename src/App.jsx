@@ -9,6 +9,8 @@ import LicenseDetail from './pages/LicenseDetail';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+import BusinessSelector from './pages/BusinessSelector';
+import ComplianceGaps from './pages/ComplianceGaps';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -41,7 +43,9 @@ export default function App() {
         <Route path="/license/:id" element={<LicenseDetail />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/compliance-gaps" element={<ComplianceGaps />} />
       </Route>
+      <Route path="/businesses" element={<ProtectedRoute><BusinessSelector /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

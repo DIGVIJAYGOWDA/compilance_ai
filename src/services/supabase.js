@@ -45,7 +45,7 @@ export async function createBusiness(data) {
   return biz;
 }
 
-function getLocalToken() {
+export function getLocalToken() {
   try {
     const projectId = safeUrl.match(/https:\/\/(.+?)\.supabase\.co/)?.[1];
     if (!projectId) return safeKey;
@@ -60,7 +60,7 @@ function getLocalToken() {
 
 export async function getBusiness(userId) {
   const token = getLocalToken();
-  const res = await fetch(`${safeUrl}/rest/v1/businesses?owner_id=eq.${userId}&order=created_at.desc&limit=1`, {
+  const res = await fetch(`${safeUrl}/rest/v1/businesses?owner_id=eq.${userId}&order=created_at.asc&limit=1`, {
     headers: {
       'apikey': safeKey,
       'Authorization': `Bearer ${token}`,
@@ -69,6 +69,19 @@ export async function getBusiness(userId) {
   if (!res.ok) throw new Error('Failed to fetch business');
   const data = await res.json();
   return data.length > 0 ? data[0] : null;
+}
+
+export async function getAllBusinessIds(userId) {
+  const token = getLocalToken();
+  const res = await fetch(`${safeUrl}/rest/v1/businesses?owner_id=eq.${userId}&select=id`, {
+    headers: {
+      'apikey': safeKey,
+      'Authorization': `Bearer ${token}`,
+    }
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.map(b => b.id);
 }
 
 export async function updateBusiness(id, updates) {
@@ -80,7 +93,13 @@ export async function updateBusiness(id, updates) {
 // ── Licenses ─────────────────────────────────────────────────────────
 export async function getLicenses(businessId) {
   const token = getLocalToken();
-  const res = await fetch(`${safeUrl}/rest/v1/licenses?business_id=eq.${businessId}&order=expiry_date.asc`, {
+  // Accept either a single ID or an array of IDs
+  const ids = Array.isArray(businessId) ? businessId : [businessId];
+  if (ids.length === 0) return [];
+  const filter = ids.length === 1
+    ? `business_id=eq.${ids[0]}`
+    : `business_id=in.(${ids.join(',')})`;
+  const res = await fetch(`${safeUrl}/rest/v1/licenses?${filter}&order=expiry_date.asc`, {
     headers: {
       'apikey': safeKey,
       'Authorization': `Bearer ${token}`,
