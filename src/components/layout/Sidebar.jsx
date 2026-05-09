@@ -1,8 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BarChart2, Settings, LogOut, Zap, Shield } from 'lucide-react';
+import { LayoutDashboard, BarChart2, Settings, LogOut, Zap, Shield, ArrowLeftRight, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemo } from '../../context/DemoContext';
+import { useBusiness } from '../../context/BusinessContext';
 import { signOut } from '../../services/supabase';
 
 const NAV = [
@@ -11,10 +12,11 @@ const NAV = [
   { to: '/settings', icon: Settings, key: 'nav.settings' },
 ];
 
-export default function Sidebar({ business }) {
+export default function Sidebar({ business, onOpenChat }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { isDemo, exitDemo } = useDemo();
+  const { clearBusiness } = useBusiness();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -52,6 +54,14 @@ export default function Sidebar({ business }) {
             {t(key)}
           </NavLink>
         ))}
+        {/* AI Assistant button */}
+        <button
+          onClick={onOpenChat}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm w-full text-white/60 hover:text-white hover:bg-white/10 transition-all"
+        >
+          <MessageCircle size={18} />
+          AI Assistant
+        </button>
       </nav>
 
       {/* Bottom */}
@@ -65,6 +75,15 @@ export default function Sidebar({ business }) {
           <div className="text-sm font-semibold text-white truncate">{business?.business_name || user?.email || 'Demo User'}</div>
           <div className="text-xs text-white/40 truncate">{user?.email || 'demo@complianceai.in'}</div>
         </div>
+        {/* Switch Business */}
+        {!isDemo && (
+          <button
+            onClick={() => { clearBusiness(); navigate('/businesses'); }}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm text-white/60 hover:text-blue-300 hover:bg-blue-500/10 transition-all"
+          >
+            <ArrowLeftRight size={15} /> Switch Business
+          </button>
+        )}
         <button onClick={handleSignOut} className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm text-white/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
           <LogOut size={16} /> {isDemo ? t('dashboard.exit_demo') : t('nav.sign_out')}
         </button>

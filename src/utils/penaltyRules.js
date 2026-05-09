@@ -59,11 +59,31 @@ export const PENALTY_RULES = {
     ],
     legal_reference: 'GST Act, 2017 — Section 69',
   },
+  SIGNAGE: {
+    name: 'Signage / Advertisement License', grace_days: 15,
+    slabs: [
+      { days_overdue: 1,  fine: 500,   consequence: 'Late fee levied by BBMP' },
+      { days_overdue: 15, fine: 2000,  consequence: 'Penalty notice from civic body' },
+      { days_overdue: 30, fine: 5000,  consequence: 'Signage removal order' },
+      { days_overdue: 90, fine: 15000, consequence: 'Forced removal and sealing of hoarding' },
+    ],
+    legal_reference: 'BBMP Advertisement Bye-Laws, 2006',
+  },
+  DRUG_LICENSE: {
+    name: 'Drug License', grace_days: 0,
+    slabs: [
+      { days_overdue: 1,  fine: 5000,   consequence: 'Warning notice from Drug Inspector' },
+      { days_overdue: 7,  fine: 15000,  consequence: 'Show cause notice; stock seizure possible' },
+      { days_overdue: 30, fine: 50000,  consequence: 'Suspension of drug sale operations' },
+      { days_overdue: 90, fine: 200000, consequence: 'Criminal prosecution under Drugs & Cosmetics Act' },
+    ],
+    legal_reference: 'Drugs and Cosmetics Act, 1940 — Section 18',
+  },
 };
 
 export function calculatePenalty(licenseType, daysOverdue) {
   const rule = PENALTY_RULES[licenseType];
-  if (!rule) return { currentFine: 0, currentConsequence: 'No penalty data', projections: [], dailyCost: 0, legalReference: '' };
+  if (!rule) return null;
 
   const effectiveDays = Math.max(0, daysOverdue - rule.grace_days);
   

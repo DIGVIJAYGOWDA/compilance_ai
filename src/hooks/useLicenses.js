@@ -13,9 +13,13 @@ export function useLicenses(businessId, demoLicenses = null) {
       return { ...l, daysLeft, computedStatus: getStatusFromDays(daysLeft) };
     }).sort((a, b) => (a.daysLeft ?? 9999) - (b.daysLeft ?? 9999));
 
+  const businessIdKey = Array.isArray(businessId) ? businessId.join(',') : businessId;
+
   const load = useCallback(async () => {
     if (demoLicenses) { setLicenses(enrich(demoLicenses)); setLoading(false); return; }
-    if (!businessId) { setLoading(false); return; }
+    // Guard: no ID yet (undefined/null) OR empty array
+    const hasId = Array.isArray(businessId) ? businessId.length > 0 : !!businessId;
+    if (!hasId) { setLoading(false); return; }
     try {
       setLoading(true);
       const data = await getLicenses(businessId);
@@ -25,7 +29,7 @@ export function useLicenses(businessId, demoLicenses = null) {
     } finally {
       setLoading(false);
     }
-  }, [businessId, demoLicenses]);
+  }, [businessIdKey, demoLicenses]);
 
   useEffect(() => { load(); }, [load]);
 

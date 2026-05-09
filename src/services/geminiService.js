@@ -79,7 +79,78 @@ License type: ${licenseType}`;
   }
 }
 
-export async function chatWithAI(message, businessContext, chatHistory, onChunk) {
+/**
+ * AI Fallback: Called when a license type has no hardcoded penalty rules.
+ * Returns a structured penalty estimate from Gemini.
+ */
+export async function getAIPenaltyEstimate(licenseType, daysOverdue) {
+  try {
+    const model = getModel(true);
+    if (!model) return null;
+
+    const prompt = `You are an Indian business compliance expert specializing in Karnataka law.
+A business has an expired "${licenseType}" license that is ${daysOverdue} days overdue.
+Estimate the current penalty and consequence based on Indian law.
+Return ONLY a valid JSON object matching this schema exactly:
+{
+  "currentFine": <number in INR, e.g. 5000>,
+  "currentConsequence": "<short consequence string>",
+  "dailyCost": <estimated daily penalty in INR>,
+  "legalReference": "<Act name and section if known>",
+  "projections": [
+    { "days": 7,  "fine": <number>, "consequence": "<string>" },
+    { "days": 30, "fine": <number>, "consequence": "<string>" },
+    { "days": 90, "fine": <number>, "consequence": "<string>" }
+  ]
+}`;
+
+    const result = await model.generateContent(prompt);
+    const data = JSON.parse(result.response.text());
+    return { ...data, aiGenerated: true };
+  } catch (err) {
+    console.error('AI Penalty Fallback Error:', err);
+    return null;
+  }
+}
+
+export async function analyzeComplianceGap(businessProfile, currentLicenses) {
+  try {
+    const model = getModel(true);
+    if (!model) return { data: null, error: 'Gemini not configured' };
+
+    const prompt = `You are a legal compliance expert for Indian businesses.
+Review the following business profile and the licenses they already have.
+Determine what MANDATORY government licenses they are MISSING based on their business type and location.
+Return the result as a JSON array. Do NOT include licenses they already have. Limit to top 4 most critical missing licenses.
+
+JSON Schema:
+[
+  {
+    "license_name": "string (e.g. Fire NOC)",
+    "issuing_authority": "string (e.g. Karnataka State Fire Department)",
+    "reason": "string (why they need it)",
+    "penalty_risk": "string (consequence of not having it)",
+    "estimated_penalty_per_year": number (in INR, e.g. 50000),
+    "documents_required": ["string", "string"],
+    "estimated_cost": "string (e.g. ₹2,000 – ₹5,000)",
+    "estimated_time": "string (e.g. 15–30 working days)",
+    "portal_url": "string (official government URL if known, else empty string)"
+  }
+]
+
+Business Profile: ${JSON.stringify(businessProfile || {})}
+Current Licenses: ${JSON.stringify((currentLicenses || []).map(l => l.license_type))}`;
+
+    const result = await model.generateContent(prompt);
+    const data = JSON.parse(result.response.text());
+    return { data, error: null };
+  } catch (err) {
+    console.error('Gap Analysis Error:', err);
+    return { data: null, error: err.message };
+  }
+}
+
+export async function chatWithAI(message, businessContext, licenses, chatHistory, onChunk) {
   try {
     const model = getModel();
     if (!model) {
@@ -87,7 +158,10 @@ export async function chatWithAI(message, businessContext, chatHistory, onChunk)
       return;
     }
 
-    const systemPrompt = `You are ComplianceAI's helpful assistant for Indian small business owners. You specialize in Indian business compliance, government licenses, penalties, and renewal procedures — specifically for Karnataka and Bengaluru. Always use INR (₹) for money. Be concise and practical. Current business: ${JSON.stringify(businessContext || {})}.`;
+    const licenseList = (licenses || []).map(l => `${l.license_type}: Expires ${l.expiry_date} (${l.daysLeft || 'unknown'} days left)`).join(', ');
+    const systemPrompt = `You are ComplianceAI's helpful assistant for Indian small business owners. You specialize in Indian business compliance, government licenses, penalties, and renewal procedures — specifically for Karnataka and Bengaluru. Always use INR (₹) for money. Be concise and practical. 
+    Current business: ${JSON.stringify(businessContext || {})}.
+    Current licenses in their dashboard: ${licenseList || 'None yet'}.`;
 
     const history = (chatHistory || []).slice(-10).map(m => ({
       role: m.role === 'model' ? 'model' : 'user',
