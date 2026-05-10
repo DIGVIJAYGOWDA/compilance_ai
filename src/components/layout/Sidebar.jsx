@@ -32,9 +32,7 @@ export default function Sidebar({ business, onOpenChat }) {
       {/* Logo */}
       <div className="px-6 py-8 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
-            <Shield size={18} className="text-white" />
-          </div>
+          <img src="/logo.png" alt="ComplianceAI Logo" className="w-9 h-9 object-contain" />
           <div>
             <div className="font-bold text-base tracking-tight">ComplianceAI</div>
             <div className="text-blue-300 text-xs">Never miss a renewal</div>

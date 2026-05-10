@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Plus, ArrowRight, LogOut, Building2, ChevronRight,
   UtensilsCrossed, Scissors, ShoppingBag, Stethoscope,
-  HardHat, GraduationCap, Factory, Briefcase, CheckCircle2
+  HardHat, GraduationCap, Factory, Briefcase, CheckCircle2,
+  Search, LayoutGrid, Lock, Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
@@ -119,118 +120,159 @@ export default function BusinessSelector() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-['Plus_Jakarta_Sans',system-ui,sans-serif] antialiased" style={{textRendering:'optimizeLegibility'}}>
+    <div className="min-h-screen bg-[#f4f7fb] flex flex-col relative overflow-hidden font-['Plus_Jakarta_Sans',system-ui,sans-serif] antialiased">
+      {/* Abstract Background Waves (CSS approximation) */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-blue-100/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-indigo-100/30 rounded-full blur-3xl translate-x-1/4 translate-y-1/4"></div>
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)', backgroundSize: '40px 40px', opacity: 0.2 }}></div>
+      </div>
 
       {/* ── Navbar ── */}
-      <nav className="flex items-center justify-between px-8 py-5 bg-[#0D1B2A] shadow-md">
+      <nav className="relative z-10 flex items-center justify-between px-8 py-5 bg-[#0D1B2A] shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#ff4f37] rounded-xl flex items-center justify-center shadow-sm">
-            <Shield size={18} className="text-white" />
-          </div>
-          <span className="text-white font-[800] text-xl tracking-tight">ComplianceAI</span>
+          <img src="/logo.png" alt="ComplianceAI" className="w-8 h-8 object-contain" />
+          <span className="text-white font-[800] text-lg tracking-tight">ComplianceAI</span>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05, y: -1 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={handleSignOut}
-          className="flex items-center gap-2 bg-red-500 text-white border border-red-400 hover:bg-red-600 hover:shadow-lg text-[13px] font-bold transition-all px-4 py-2.5 rounded-xl"
+          className="flex items-center gap-2 border border-gray-600 text-gray-300 hover:text-white hover:border-gray-400 text-[13px] font-medium transition-colors px-4 py-2 rounded-lg"
         >
           <LogOut size={16} /> Sign Out
-        </motion.button>
+        </button>
       </nav>
 
       {/* ── Main Content ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-2xl"
-        >
-          {/* Title */}
-          <div className="text-center mb-10">
-            <h1 className="text-[32px] font-[800] text-[#0c0c1d] mb-2 tracking-[-0.02em]">Select a Business</h1>
-            <p className="text-gray-500 text-[15px] font-['DM_Sans']">Choose which business dashboard you want to manage</p>
-          </div>
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-12 max-w-[1000px] mx-auto w-full">
+        
+        {/* Title */}
+        <div className="text-center mb-10">
+          <h1 className="text-[36px] font-[800] text-[#0c0c1d] mb-2 tracking-tight">Select a Business</h1>
+          <p className="text-gray-500 text-[15px]">Choose which business dashboard you want to manage</p>
+        </div>
 
-          {/* Business Cards */}
+        {/* Toolbar: Search + Add Business Button */}
+        <div className="w-full flex flex-col md:flex-row gap-4 justify-between items-center mb-8">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input type="text" placeholder="Search businesses..." className="w-full bg-white border border-gray-200 rounded-xl py-3 pl-12 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all shadow-sm" />
+          </div>
+          
+          <div className="flex gap-3 w-full md:w-auto">
+            <button className="hidden md:flex items-center justify-center w-12 h-12 bg-white border border-gray-200 rounded-xl text-blue-600 shadow-sm hover:bg-gray-50 transition-colors">
+              <LayoutGrid size={20} />
+            </button>
+            <button onClick={handleAddNew} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-6 py-3 rounded-xl font-bold text-[14px] shadow-sm transition-colors">
+              <Plus size={18} /> Add New Business
+            </button>
+          </div>
+        </div>
+
+        {/* Business Grid */}
+        <div className="w-full">
           {loading ? (
-            <div className="space-y-3">
-              {[1, 2].map(i => (
-                <div key={i} className="h-24 bg-white border border-gray-100 rounded-2xl animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-[120px] bg-white border border-gray-100 rounded-[1.25rem] animate-pulse" />
               ))}
             </div>
           ) : (
             <AnimatePresence>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {businesses.map((biz, i) => {
                   const Icon = getBusinessIcon(biz.business_type);
                   const gradient = getBusinessGradient(biz.business_type);
                   const count = licenseCounts[biz.id] ?? '...';
+                  // Let's fake an "Active" badge for the first one like the mockup
+                  const isActive = i === 0;
+
                   return (
                     <motion.button
                       key={biz.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ scale: 1.01, y: -2 }}
+                      whileHover={{ scale: 1.02, y: -2 }}
                       whileTap={{ scale: 0.98 }}
-                      transition={{ delay: i * 0.08, type: 'spring', stiffness: 400, damping: 25 }}
+                      transition={{ delay: i * 0.05 }}
                       onClick={() => handleSelect(biz)}
-                      className="w-full group bg-gradient-to-br from-[#f8fafc] to-[#f1f5f9] hover:from-white hover:to-white border border-slate-200 hover:border-[#ff4f37] hover:shadow-[0_8px_30px_rgba(255,79,55,0.1)] rounded-2xl p-5 flex items-center gap-5 transition-all duration-200 text-left"
+                      className={`w-full group bg-white border rounded-[1.25rem] p-6 flex items-center gap-5 transition-all duration-200 text-left shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.1)] relative overflow-hidden ${isActive ? 'border-blue-200 ring-1 ring-blue-100' : 'border-gray-100 hover:border-blue-300'}`}
                     >
+                      {isActive && (
+                        <div className="absolute top-4 left-6 bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                          Active
+                        </div>
+                      )}
+
                       {/* Icon */}
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                        <Icon size={24} className="text-white" />
+                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 shadow-sm ${isActive ? 'mt-4' : ''}`}>
+                        <Icon size={28} className="text-white" />
                       </div>
 
                       {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-[#0c0c1d] text-base truncate">{biz.business_name}</div>
-                        <div className="text-gray-500 text-sm capitalize font-['DM_Sans']">{biz.business_type?.replace('_', ' ')} · {biz.city}</div>
-                        <div className="mt-1.5 inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-500 font-medium text-xs px-2.5 py-1 rounded-full">
-                          <Building2 size={10} />
+                      <div className={`flex-1 min-w-0 ${isActive ? 'mt-4' : ''}`}>
+                        <div className="font-bold text-[#0c0c1d] text-[17px] truncate">{biz.business_name}</div>
+                        <div className="text-gray-500 text-[13px] capitalize mb-2">{biz.business_type?.replace('_', ' ')} · {biz.city}</div>
+                        <div className="inline-flex items-center gap-1.5 text-gray-500 font-medium text-[12px] bg-gray-50 px-2 py-1 rounded-md">
+                          <Lock size={12} />
                           {count} license{count !== 1 ? 's' : ''} tracked
                         </div>
                       </div>
 
                       {/* Arrow */}
-                      <ChevronRight size={20} className="text-gray-300 group-hover:text-[#ff4f37] flex-shrink-0 transition-colors" />
+                      <ChevronRight size={20} className="text-gray-300 group-hover:text-blue-600 flex-shrink-0 transition-colors" />
                     </motion.button>
                   );
                 })}
-
-                {/* Add New Business */}
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.01, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ delay: businesses.length * 0.08, type: 'spring', stiffness: 400, damping: 25 }}
-                  onClick={handleAddNew}
-                  className="w-full group border-2 border-dashed border-gray-200 hover:border-[#ff4f37] hover:bg-[#fffcfc] hover:shadow-[0_8px_30px_rgba(255,79,55,0.08)] rounded-2xl p-5 flex items-center gap-5 transition-all duration-200"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gray-100 group-hover:bg-[#fff5f3] border-2 border-dashed border-gray-200 group-hover:border-[#ffd5cc] flex items-center justify-center flex-shrink-0 transition-all">
-                    <Plus size={24} className="text-gray-400 group-hover:text-[#ff4f37] transition-colors" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-bold text-gray-600 group-hover:text-[#0c0c1d] transition-colors">Add New Business</div>
-                    <div className="text-gray-500 text-sm font-['DM_Sans']">Register another business to track</div>
-                  </div>
-                  <ArrowRight size={20} className="text-gray-300 group-hover:text-[#ff4f37] flex-shrink-0 transition-colors" />
-                </motion.button>
               </div>
             </AnimatePresence>
           )}
 
           {/* Empty State */}
           {!loading && businesses.length === 0 && (
-            <div className="text-center py-10">
-              <div className="text-gray-500 text-sm mb-4 font-['DM_Sans']">No businesses registered yet.</div>
-              <button onClick={handleAddNew} className="bg-[#ff4f37] text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 mx-auto hover:bg-[#e03a25] transition-colors">
-                <Plus size={16} /> Register Your First Business
-              </button>
+            <div className="text-center py-16 bg-white border border-gray-100 rounded-[1.25rem] shadow-sm">
+              <div className="text-gray-500 text-sm mb-4">No businesses registered yet.</div>
             </div>
           )}
-        </motion.div>
+        </div>
+
+        {/* ── Bottom Features Panel ── */}
+        <div className="w-full mt-12 bg-white rounded-[1.25rem] p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100">
+          <div className="flex gap-4 items-center flex-1">
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+              <Shield className="text-blue-600" size={24} strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="font-bold text-gray-900 text-[13px] mb-0.5">Centralized Management</div>
+              <div className="text-gray-500 text-[12px] leading-snug">Manage all your businesses from one secure dashboard</div>
+            </div>
+          </div>
+          
+          <div className="hidden md:block w-px h-12 bg-gray-100"></div>
+
+          <div className="flex gap-4 items-center flex-1">
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+              <Lock className="text-blue-600" size={24} strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="font-bold text-gray-900 text-[13px] mb-0.5">Secure & Private</div>
+              <div className="text-gray-500 text-[12px] leading-snug">Your business data is encrypted and always protected</div>
+            </div>
+          </div>
+
+          <div className="hidden md:block w-px h-12 bg-gray-100"></div>
+
+          <div className="flex gap-4 items-center flex-1">
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+              <Zap className="text-blue-600" size={24} strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="font-bold text-gray-900 text-[13px] mb-0.5">Stay Compliant</div>
+              <div className="text-gray-500 text-[12px] leading-snug">Track licenses, renewals, and compliance in one place</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

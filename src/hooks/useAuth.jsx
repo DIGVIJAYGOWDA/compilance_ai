@@ -15,6 +15,9 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch(err => {
+      console.error('Supabase auth error:', err);
+      setLoading(false);
     });
 
     // Listen for auth changes — fires when magic link is clicked or OTP verified
