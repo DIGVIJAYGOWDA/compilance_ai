@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, AlertTriangle, TrendingDown, Plus } from 'lucide-react';
+import { AlertTriangle, Plus, Camera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
@@ -11,12 +11,12 @@ import { calculateComplianceScore, getLicenseSummary } from '../utils/compliance
 import { formatCurrency } from '../utils/formatters';
 import { PENALTY_RULES } from '../utils/penaltyRules';
 import { getBusiness, createLicense } from '../services/supabase';
+import { analyzeComplianceGap } from '../services/geminiService';
 import ComplianceRing from '../components/ui/ComplianceRing';
 import LicenseCard from '../components/ui/LicenseCard';
 import SkeletonCard from '../components/ui/SkeletonCard';
 import EmptyState from '../components/ui/EmptyState';
 import ScanModal from '../components/features/ScanModal';
-import ChatBot from '../components/features/ChatBot';
 
 function StatCard({ label, value, color = 'text-blue-600', icon }) {
   return (
@@ -40,6 +40,34 @@ export default function Dashboard() {
     isDemo ? null : business?.id,
     isDemo ? demoLicenses : null
   );
+
+  const [missingLicenses, setMissingLicenses] = useState([]);
+  const [gapLoading, setGapLoading] = useState(false);
+
+  useEffect(() => {
+    if (loading || !business || !licenses) return;
+
+    // Build a cache key unique to this business + number of uploaded licenses
+    const cacheKey = `compliance_gaps_${business.id}_${licenses.length}`;
+    const cached = localStorage.getItem(cacheKey);
+
+    if (cached) {
+      // Use cached result — no API call needed
+      try { setMissingLicenses(JSON.parse(cached)); } catch { /* ignore */ }
+      return;
+    }
+
+    // Fresh fetch — new business or licenses changed
+    setGapLoading(true);
+    analyzeComplianceGap(business, licenses).then(res => {
+      if (res.data) {
+        setMissingLicenses(res.data);
+        localStorage.setItem(cacheKey, JSON.stringify(res.data));
+        // Also store for ComplianceGaps detail page
+        localStorage.setItem('compliance_gaps', JSON.stringify(res.data));
+      }
+    }).finally(() => setGapLoading(false));
+  }, [loading, business, licenses?.length]);
 
   // If App.jsx is still loading the business, wait
   if (!isDemo && user && business === undefined) {
@@ -168,17 +196,48 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* FAB */}
-      <button onClick={() => setShowScan(true)}
-        className="fixed bottom-24 right-4 lg:bottom-8 lg:right-8 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-110">
-        <Camera size={24} />
-      </button>
+      {/* AI Insight Banner */}
+      {gapLoading ? (
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3 animate-pulse">
+          <div className="w-9 h-9 bg-amber-200 rounded-xl flex-shrink-0" />
+          <div className="space-y-2 flex-1">
+            <div className="h-3 bg-amber-200 rounded w-2/3" />
+            <div className="h-2.5 bg-amber-100 rounded w-1/2" />
+          </div>
+        </div>
+      ) : missingLicenses.length > 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <AlertTriangle size={16} className="text-amber-600" />
+            </div>
+            <div>
+              <div className="text-[11px] font-bold text-amber-600 uppercase tracking-widest mb-0.5">AI Insight</div>
+              <div className="text-sm font-bold text-gray-900">
+                AI detected {missingLicenses.length} missing mandatory license{missingLicenses.length > 1 ? 's' : ''} for {business?.business_name || 'your business'} in {business?.city || 'your area'}.
+              </div>
+              {(() => {
+                const total = missingLicenses.reduce((s, m) => s + (m.estimated_penalty_per_year || 0), 0);
+                return total > 0 ? (
+                  <div className="text-xs text-amber-700 mt-0.5">Potential penalty exposure: ₹{(total / 100000).toFixed(2)} Lakhs / year</div>
+                ) : null;
+              })()}
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/compliance-gaps')}
+            className="flex-shrink-0 flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+          >
+            View Missing Licenses →
+          </button>
+        </motion.div>
+      ) : null}
 
       {/* Scan Modal */}
       {showScan && <ScanModal onClose={() => setShowScan(false)} onSave={handleSave} />}
-
-      {/* Chatbot */}
-      <ChatBot />
     </div>
   );
 }

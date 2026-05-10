@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import App from './App.jsx';
 import { AuthProvider } from './hooks/useAuth.jsx';
 import { DemoProvider } from './context/DemoContext.jsx';
+import { BusinessProvider } from './context/BusinessContext.jsx';
 import './i18n/index.js';
 import './index.css';
 
@@ -40,13 +41,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <DemoProvider>
         <AuthProvider>
-          <App />
-          <Toaster position="top-right" toastOptions={{
-            duration: 4000,
-            style: { borderRadius: 12, fontSize: 14, fontFamily: 'Inter, sans-serif' },
-            success: { style: { background: '#16A34A', color: '#fff' } },
-            error: { style: { background: '#DC2626', color: '#fff' } },
-          }} />
+          <BusinessProvider>
+            <App />
+            <Toaster position="top-right" toastOptions={{
+              duration: 4000,
+              style: { borderRadius: 12, fontSize: 14, fontFamily: 'Inter, sans-serif' },
+              success: { style: { background: '#16A34A', color: '#fff' } },
+              error: { style: { background: '#DC2626', color: '#fff' } },
+            }} />
+          </BusinessProvider>
         </AuthProvider>
       </DemoProvider>
     </BrowserRouter>

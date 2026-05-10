@@ -5,12 +5,7 @@ import { FileDown, ExternalLink, CheckSquare, Square, Loader2 } from 'lucide-rea
 import { generateFormPrefill } from '../../services/geminiService';
 import { generateRenewalPDF } from '../../services/pdfService';
 import { getLicenseById } from '../../utils/licenseTypes';
-import { motion } from 'framer-motion';
-import toast from 'react-hot-toast';
-import { FileDown, ExternalLink, CheckSquare, Square, Loader2 } from 'lucide-react';
-import { generateFormPrefill } from '../../services/geminiService';
-import { generateRenewalPDF } from '../../services/pdfService';
-import { getLicenseById } from '../../utils/licenseTypes';
+import { supabase } from '../../services/supabase';
 
 export default function RenewalForm({ license, business }) {
   const [loading, setLoading] = useState(false);
@@ -25,6 +20,15 @@ export default function RenewalForm({ license, business }) {
       const { data, error } = await generateFormPrefill(business, license.license_type);
       if (error) throw new Error(error);
       setFormData(data);
+      // Log renewal initiation to DB
+      try {
+        await supabase.from('renewals').insert({
+          license_id: license.id,
+          pre_filled_data: data,
+          document_checklist: (data.documentChecklist || []).map(item => ({ item, checked: false })),
+          status: 'in_progress',
+        });
+      } catch (e) { console.warn('Failed to log renewal:', e); }
     } catch (err) {
       toast.error('AI unavailable — using standard checklist');
       setFormData({

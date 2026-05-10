@@ -1,40 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
 import { useDemo } from '../../context/DemoContext';
 import { X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { getBusiness } from '../../services/supabase';
+import { useBusiness } from '../../context/BusinessContext';
+import ChatBot from '../features/ChatBot';
 
 export default function AppLayout() {
   const { user } = useAuth();
   const { isDemo, demoBusiness, exitDemo } = useDemo();
+  const { activeBusiness } = useBusiness();
   const navigate = useNavigate();
-  const [business, setBusiness] = useState(isDemo ? demoBusiness : undefined);
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const business = isDemo ? demoBusiness : activeBusiness;
 
   useEffect(() => {
-    if (isDemo) { setBusiness(demoBusiness); return; }
-    if (user) {
-      getBusiness(user.id)
-        .then(biz => {
-          if (biz) setBusiness(biz);
-          else {
-            setBusiness(null);
-            window.location.href = '/onboard';
-          }
-        })
-        .catch((e) => {
-          console.error(e);
-          setBusiness(null);
-          window.location.href = '/onboard';
-        });
+    if (isDemo) return;
+    if (user && !activeBusiness) {
+      navigate('/businesses', { replace: true });
     }
-  }, [user, isDemo, navigate]);
+  }, [user, activeBusiness, isDemo, navigate]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar business={business} />
+      <Sidebar business={business} onOpenChat={() => setChatOpen(true)} />
       <div className="flex-1 lg:ml-64 flex flex-col">
         {/* Demo Banner */}
         {isDemo && (
@@ -50,6 +42,8 @@ export default function AppLayout() {
         </main>
       </div>
       <BottomNav />
+      {/* ChatBot rendered at layout level — no floating bubble clashes */}
+      <ChatBot business={business} isOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 }

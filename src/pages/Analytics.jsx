@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { useOutletContext } from 'react-router-dom';
 import { useDemo } from '../context/DemoContext';
 import { useAuth } from '../hooks/useAuth';
 import { useLicenses } from '../hooks/useLicenses';
@@ -27,7 +28,11 @@ export default function Analytics() {
   const { t } = useTranslation();
   const { isDemo, demoLicenses } = useDemo();
   const { user } = useAuth();
-  const { licenses } = useLicenses(null, isDemo ? demoLicenses : null);
+  const { business } = useOutletContext();
+  const { licenses } = useLicenses(
+    isDemo ? null : business?.id, 
+    isDemo ? demoLicenses : null
+  );
 
   const scoreData = calculateComplianceScore(licenses);
   const summary = getLicenseSummary(licenses);

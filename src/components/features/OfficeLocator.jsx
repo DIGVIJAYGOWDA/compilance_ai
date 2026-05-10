@@ -16,12 +16,16 @@ export default function OfficeLocator({ licenseType }) {
   const office = OFFICE_LOCATIONS[licenseType] || OFFICE_LOCATIONS.TRADE_LICENSE;
 
   useEffect(() => {
-    let map, L;
+    let mapInstance = null;
+    let isMounted = true;
+
     const init = async () => {
       try {
-        L = (await import('leaflet')).default;
+        const L = (await import('leaflet')).default;
         await import('leaflet/dist/leaflet.css');
-        if (!mapRef.current || map) return;
+        
+        if (!isMounted || !mapRef.current) return;
+        if (mapInstance) return;
 
         // Fix default icon paths
         delete L.Icon.Default.prototype._getIconUrl;
@@ -31,19 +35,29 @@ export default function OfficeLocator({ licenseType }) {
           shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
         });
 
-        map = L.map(mapRef.current, { zoomControl: true }).setView([office.lat, office.lng], 14);
+        mapInstance = L.map(mapRef.current, { zoomControl: true }).setView([office.lat, office.lng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© OpenStreetMap contributors',
-        }).addTo(map);
+        }).addTo(mapInstance);
 
-        const marker = L.marker([office.lat, office.lng]).addTo(map);
+        const marker = L.marker([office.lat, office.lng]).addTo(mapInstance);
         marker.bindPopup(`<strong>${office.name}</strong><br>${office.address}`).openPopup();
         setMapReady(true);
-      } catch (e) { console.warn('Map init failed:', e); }
+      } catch (e) { 
+        console.warn('Map init failed:', e); 
+      }
     };
+    
     init();
-    return () => { if (map) map.remove(); };
-  }, [licenseType]);
+    
+    return () => { 
+      isMounted = false;
+      if (mapInstance) {
+        mapInstance.remove();
+        mapInstance = null;
+      }
+    };
+  }, [office.lat, office.lng, office.name, office.address]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
